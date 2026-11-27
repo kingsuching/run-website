@@ -70,8 +70,16 @@ def get_credentials() -> tuple[int, str]:
     if creds is None:
         creds = _from_file()
     if creds is None:
-        raise RuntimeError("Strava credentials not found. Add a [strava] section with client_id and "
-                           "client_secret to .streamlit/secrets.toml (or the app's Secrets on Streamlit Cloud).")
+        try:
+            if store._get_engine() is None:
+                db = ("no database is configured, so the app is using local files. Add [database] url = "
+                      "\"postgresql://...\" to .streamlit/secrets.toml (or the app's Secrets on Streamlit Cloud)")
+            else:
+                db = f"the database has no '{CREDENTIALS_KEY}' row with client_id and client_secret"
+        except Exception as e:  # connection or driver failure: show it instead of hiding it
+            db = f"the database could not be reached ({type(e).__name__}: {e})"
+        raise RuntimeError(f"Strava credentials not found: {db}. Alternatively, add client_id and client_secret "
+                           "under [strava] in the secrets.")
     return int(creds[0]), creds[1].strip()
 
 
