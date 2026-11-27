@@ -59,8 +59,7 @@ if route.get("description"):
 m = st.columns(6)
 m[0].metric("Distance", f"{total:.2f} mi")
 m[1].metric("Elevation gain", f"{route['elevation_gain_m'] * sch.FT_PER_M:,.0f} ft")
-m[2].metric("Average speed", f"{ctx.speed / sch.M_PER_MILE * 3600:.2f} mph",
-            sch.fmt_pace(sch.pace_min_per_mile(ctx.speed)), delta_color="off")
+m[2].metric("Pace", sch.fmt_pace(sch.pace_min_per_mile(ctx.speed)))
 m[3].metric("Moving time", sch.fmt_duration(ctx.moving_s))
 m[4].metric("Total w/ stops", sch.fmt_duration(ctx.moving_s + ctx.stop_s),
             f"+{sch.fmt_duration(ctx.stop_s)} stopped" if ctx.stop_s else None, delta_color="off")
