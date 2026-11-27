@@ -1,0 +1,15 @@
+# secrets & tokens
+.streamlit/secrets.toml
+backend/.strava_token.json
+
+# local data
+backend/.data/
+
+# python / tooling
+__pycache__/
+*.pyc
+.venv/
+.idea/
+frontend/.agents/
+frontend/.claude/
+.DS_Store

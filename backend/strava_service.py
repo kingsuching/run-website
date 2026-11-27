@@ -3,30 +3,56 @@ from __future__ import annotations
 
 import json
 import os
-import sys
-sys.path.append('../strava')
 import time
 from pathlib import Path
 
 os.environ.setdefault("SILENCE_TOKEN_WARNINGS", "true")
 from stravalib import Client  # noqa: E402
 
-STRAVA_DIR = Path(os.environ.get("STRAVA_DIR", Path.home() / "Documents" / "strava"))
 BACKEND_DIR = Path(__file__).resolve().parent
 TOKEN_FILE = BACKEND_DIR / ".strava_token.json"
+# Local fallback only: a credentials.txt with "client_id = ..." / "client_secret = ..." lines.
+CREDENTIALS_FILE = Path(os.environ.get("STRAVA_DIR", Path.home() / "Documents" / "strava")) / "credentials.txt"
 
 ROUTE_ID = 3554322571311095478
 SCOPES = ["read_all", "profile:read_all", "activity:read_all"]
 
-# readCredentials() lives in ~/Documents/strava/functions.py, which also imports `units` from that folder.
-if str(STRAVA_DIR) not in sys.path:
-    sys.path.append(str(STRAVA_DIR))
-from functions import readCredentials  # noqa: E402
+
+def _from_secrets() -> tuple[str, str] | None:
+    """Read [strava] client_id / client_secret from Streamlit secrets (.streamlit/secrets.toml or Cloud settings)."""
+    try:
+        import streamlit as st
+
+        sec = st.secrets["strava"]
+        return str(sec["client_id"]), str(sec["client_secret"])
+    except Exception:
+        return None
+
+
+def _from_file() -> tuple[str, str] | None:
+    if not CREDENTIALS_FILE.exists():
+        return None
+    values = {}
+    for line in CREDENTIALS_FILE.read_text().splitlines():
+        if "=" in line:
+            key, val = line.split("=", 1)
+            values[key.strip().lower()] = val.strip()
+    if "client_id" in values and "client_secret" in values:
+        return values["client_id"], values["client_secret"]
+    return None
 
 
 def get_credentials() -> tuple[int, str]:
-    client_id, client_secret = readCredentials(str(STRAVA_DIR / "credentials.txt"))
-    return int(client_id), client_secret.strip()
+    """Strava API credentials: Streamlit secrets, then env vars, then the local credentials.txt."""
+    creds = _from_secrets()
+    if creds is None and os.environ.get("STRAVA_CLIENT_ID") and os.environ.get("STRAVA_CLIENT_SECRET"):
+        creds = os.environ["STRAVA_CLIENT_ID"], os.environ["STRAVA_CLIENT_SECRET"]
+    if creds is None:
+        creds = _from_file()
+    if creds is None:
+        raise RuntimeError("Strava credentials not found. Add a [strava] section with client_id and "
+                           "client_secret to .streamlit/secrets.toml (or the app's Secrets on Streamlit Cloud).")
+    return int(creds[0]), creds[1].strip()
 
 
 # ---------------------------------------------------------------- tokens

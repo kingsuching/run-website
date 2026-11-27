@@ -25,7 +25,15 @@ def reload_changed_backend_modules() -> None:
             importlib.reload(mod)
 
 
-REDIRECT_URI = "http://localhost:8501"
+def _redirect_uri() -> str:
+    """Where Strava sends the user back after sign-in. Set `redirect_uri` in secrets for the deployed app."""
+    try:
+        return str(st.secrets["strava"].get("redirect_uri", "http://localhost:8501"))
+    except Exception:
+        return "http://localhost:8501"
+
+
+REDIRECT_URI = _redirect_uri()
 ROUTE_TTL_S = 600
 
 PLAN_LABELS = {
@@ -100,7 +108,7 @@ def _connect_ui() -> None:
     try:
         url = svc.authorization_url(REDIRECT_URI)
     except Exception as e:
-        st.error(f"Could not read Strava credentials from {svc.STRAVA_DIR / 'credentials.txt'}: {e}")
+        st.error(f"Could not read Strava credentials: {e}")
         return
     st.link_button("Connect with Strava", url, type="primary")
     with st.expander("Redirect didn't work? Paste the code"):
