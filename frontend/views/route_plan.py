@@ -64,7 +64,7 @@ m[2].metric("Average speed", f"{ctx.speed / sch.M_PER_MILE * 3600:.2f} mph",
 m[3].metric("Moving time", sch.fmt_duration(ctx.moving_s))
 m[4].metric("Total w/ stops", sch.fmt_duration(ctx.moving_s + ctx.stop_s),
             f"+{sch.fmt_duration(ctx.stop_s)} stopped" if ctx.stop_s else None, delta_color="off")
-m[5].metric("Start → Finish", f"{C.fmt_t(ctx.start)} → {C.fmt_t(ctx.finish['arrive'])}")
+m[5].metric("Finish ETA", C.fmt_t(ctx.finish["arrive"]))
 
 if route.get("altitude"):
     prof = pd.DataFrame({"Mile": ctx.cum_mi, "Elevation (ft)": [a * sch.FT_PER_M for a in route["altitude"]]})
