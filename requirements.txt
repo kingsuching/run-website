@@ -1,0 +1,5 @@
+streamlit
+stravalib
+pandas
+folium
+streamlit-folium
