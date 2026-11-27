@@ -24,7 +24,7 @@ import common  # noqa: E402
 
 common.reload_changed_backend_modules()
 
-st.set_page_config(page_title="Group Run Planner", page_icon="🏃", layout="wide")
+st.set_page_config(page_title="Run Sign Up Sheet", page_icon="🏃", layout="wide")
 
 pages = st.navigation([
     st.Page("views/route_plan.py", title="Route plan", icon="🗺️", default=True),
@@ -33,8 +33,8 @@ pages = st.navigation([
 
 ctx = common.sidebar_and_context()
 if ctx is None:
-    st.title("🏃 Group Run Planner")
-    st.info(f"Connect to Strava in the sidebar to load route {common.svc.ROUTE_ID}.")
+    st.title("Run Sign Up Sheet")
+    st.info(f"Connect to Strava in the sidebar to load route")
     st.stop()
 
 st.session_state["ctx"] = ctx
