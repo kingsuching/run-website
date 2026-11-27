@@ -9,13 +9,31 @@ from pathlib import Path
 os.environ.setdefault("SILENCE_TOKEN_WARNINGS", "true")
 from stravalib import Client  # noqa: E402
 
-BACKEND_DIR = Path(__file__).resolve().parent
-TOKEN_FILE = BACKEND_DIR / ".strava_token.json"
+import store  # noqa: E402  (same backend/ folder)
+
 # Local fallback only: a credentials.txt with "client_id = ..." / "client_secret = ..." lines.
 CREDENTIALS_FILE = Path(os.environ.get("STRAVA_DIR", Path.home() / "Documents" / "strava")) / "credentials.txt"
 
 ROUTE_ID = 3554322571311095478
 SCOPES = ["read_all", "profile:read_all", "activity:read_all"]
+
+
+CREDENTIALS_KEY = "strava_credentials"  # app_kv row: {"client_id", "client_secret", "redirect_uri"}
+
+
+def database_config() -> dict:
+    """Strava app settings stored in the database (empty when there is no database or no row)."""
+    try:
+        return store.get_value(CREDENTIALS_KEY) or {}
+    except Exception:
+        return {}
+
+
+def _from_database() -> tuple[str, str] | None:
+    cfg = database_config()
+    if cfg.get("client_id") and cfg.get("client_secret"):
+        return str(cfg["client_id"]), str(cfg["client_secret"])
+    return None
 
 
 def _from_secrets() -> tuple[str, str] | None:
@@ -43,8 +61,10 @@ def _from_file() -> tuple[str, str] | None:
 
 
 def get_credentials() -> tuple[int, str]:
-    """Strava API credentials: Streamlit secrets, then env vars, then the local credentials.txt."""
-    creds = _from_secrets()
+    """Strava API credentials: the database, then Streamlit secrets, then env vars, then the local credentials.txt."""
+    creds = _from_database()
+    if creds is None:
+        creds = _from_secrets()
     if creds is None and os.environ.get("STRAVA_CLIENT_ID") and os.environ.get("STRAVA_CLIENT_SECRET"):
         creds = os.environ["STRAVA_CLIENT_ID"], os.environ["STRAVA_CLIENT_SECRET"]
     if creds is None:
@@ -57,24 +77,15 @@ def get_credentials() -> tuple[int, str]:
 
 # ---------------------------------------------------------------- tokens
 def _load_token() -> dict | None:
-    if TOKEN_FILE.exists():
-        try:
-            return json.loads(TOKEN_FILE.read_text())
-        except (OSError, json.JSONDecodeError):
-            return None
-    return None
+    return store.get_value("strava_token")
 
 
 def _save_token(info: dict) -> None:
-    TOKEN_FILE.write_text(json.dumps({
+    store.put_value("strava_token", {
         "access_token": info["access_token"],
         "refresh_token": info["refresh_token"],
         "expires_at": int(info["expires_at"]),
-    }))
-    try:
-        os.chmod(TOKEN_FILE, 0o600)
-    except OSError:
-        pass
+    })
 
 
 def authorization_url(redirect_uri: str) -> str:
@@ -108,7 +119,7 @@ def get_client() -> Client | None:
 
 
 def disconnect() -> None:
-    TOKEN_FILE.unlink(missing_ok=True)
+    store.delete_value("strava_token")
 
 
 # ---------------------------------------------------------------- route

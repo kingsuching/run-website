@@ -3,3 +3,5 @@ stravalib
 pandas
 folium
 streamlit-folium
+sqlalchemy
+psycopg[binary]

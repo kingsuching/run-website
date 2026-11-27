@@ -13,3 +13,6 @@ __pycache__/
 frontend/.agents/
 frontend/.claude/
 .DS_Store
+.neon
+node_modules/
+*.bak

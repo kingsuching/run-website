@@ -26,11 +26,13 @@ def reload_changed_backend_modules() -> None:
 
 
 def _redirect_uri() -> str:
-    """Where Strava sends the user back after sign-in. Set `redirect_uri` in secrets for the deployed app."""
+    """Where Strava sends the user back after sign-in.
+
+    Secrets win (the URL differs per deployment), then the database's strava_credentials row, then localhost."""
     try:
-        return str(st.secrets["strava"].get("redirect_uri", "http://localhost:8501"))
+        return str(st.secrets["strava"]["redirect_uri"])
     except Exception:
-        return "http://localhost:8501"
+        return str(svc.database_config().get("redirect_uri") or "http://localhost:8501")
 
 
 REDIRECT_URI = _redirect_uri()
